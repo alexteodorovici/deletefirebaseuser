@@ -15,32 +15,18 @@ class ViewModel : ViewModel() {
     val currentUserState: MutableState<FirebaseUser?> = mutableStateOf(firebaseAuth.currentUser)
     val errorMessage: MutableState<String> = mutableStateOf("")
 
-    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-        currentUserState.value = firebaseAuth.currentUser
-    }
-
-    init {
-        firebaseAuth.addAuthStateListener(authStateListener)
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        firebaseAuth.removeAuthStateListener(authStateListener)
-    }
-
-    fun logoutUser() {
+    fun logoutUser(onLogoutComplete: () -> Unit) {
         viewModelScope.launch {
             try {
-                // Sign out the current user
                 firebaseAuth.signOut()
-                // After logging out, update the current user state to null
+                onLogoutComplete() // Invoke the callback after successful logout
 //                currentUserState.value = null
             } catch (e: Exception) {
-                // Handle any exceptions
                 e.printStackTrace()
             }
         }
     }
+
 
     fun loginUser(userEmail: String, userPassword: String) {
         viewModelScope.launch {
@@ -78,16 +64,18 @@ class ViewModel : ViewModel() {
         }
     }
 
-    fun deleteUser() {
-        viewModelScope.launch {
-            try {
-                currentUserState.value?.delete()?.await()
-                // After deletion, clear the current user state
-                currentUserState.value = null
-                // Optionally, you might want to handle post-deletion logic here, like navigation
-            } catch (e: Exception) {
-                // Handle any errors, such as network issues or permission errors
-                e.printStackTrace()
+    fun deleteUser(onDeleteComplete: () -> Unit) {
+        val currentUser = firebaseAuth.currentUser
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                try {
+                    user.delete().await()
+                    onDeleteComplete() // Invoke the callback after successful deletion
+//                    currentUserState.value = null
+                } catch (e: Exception) {
+                    errorMessage.value = e.localizedMessage ?: "An error occurred during the deletion process."
+                    e.printStackTrace()
+                }
             }
         }
     }

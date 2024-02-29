@@ -21,14 +21,6 @@ fun ProfileScreen(navController: NavHostController) {
     val user by remember { viewModel.currentUserState }
     val errorMessage by remember { viewModel.errorMessage }
 
-    LaunchedEffect(user) {
-        if (user == null) {
-            navController.navigate(Screen.LoginScreen.route) {
-                popUpTo(Screen.LoginScreen.route) { inclusive = true }
-            }
-        }
-    }
-
     Column {
         if (errorMessage.isNotEmpty()) {
             Text(
@@ -46,7 +38,12 @@ fun ProfileScreen(navController: NavHostController) {
         Button(
             modifier = Modifier.padding(20.dp),
             onClick = {
-                viewModel.logoutUser()
+                viewModel.logoutUser {
+                    // This block is the callback that gets called after logout
+                    navController.navigate(Screen.LoginScreen.route) {
+                        popUpTo(Screen.LoginScreen.route) { inclusive = true }
+                    }
+                }
             }) {
             Text(text = "Logout user ${user?.email}")
         }
@@ -55,7 +52,12 @@ fun ProfileScreen(navController: NavHostController) {
         Button(
             modifier = Modifier.padding(20.dp),
             onClick = {
-                viewModel.deleteUser()
+                viewModel.deleteUser {
+                    // This block is the callback that gets called after deletion
+                    navController.navigate(Screen.LoginScreen.route) {
+                        popUpTo(Screen.LoginScreen.route) { inclusive = true }
+                    }
+                }
             }) {
             Text(text = "Delete user ${user?.email}")
         }
